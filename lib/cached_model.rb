@@ -23,7 +23,7 @@ class CachedModel < ActiveRecord::Base
 
   self.abstract_class = true
 
-  VERSION = '1.3.3'
+  VERSION = '1.3.3.Umur'
 
   @cache_delay_commit = {}
   @cache_local = {}
@@ -108,6 +108,7 @@ class CachedModel < ActiveRecord::Base
   # belong.
 
   def self.find(*args)
+logger.debug "CachedModel.find #{args.to_json}"
     args[0] = args.first.to_i if args.first =~ /\A\d+\Z/
     # Only handle simple find requests.  If the request was more complicated,
     # let the base class handle it, but store the retrieved records in the
@@ -121,6 +122,7 @@ class CachedModel < ActiveRecord::Base
       return records if RAILS_ENV == 'test'
       case records
       when Array then
+logger.debug "CachedModel.find STORE"
         records.each { |r| r.cache_store }
       end
       return records
@@ -133,7 +135,9 @@ class CachedModel < ActiveRecord::Base
   # Find by primary key from the cache.
 
   def self.find_by_sql(*args)
-    return super unless args.first =~ /^SELECT \* FROM #{table_name} WHERE \(#{table_name}\.#{primary_key} = '?(\d+)'?\)( +LIMIT 1|\Z)/
+logger.debug "CachedModel.find_by_sql #{args.join(',')}"
+    expected_query = %r{^SELECT \* FROM "#{table_name}" WHERE \("#{table_name}"\."#{primary_key}" = '?(\d+)'?\)}
+    return super unless args.first =~ expected_query
 
     id = $1.to_i
 
@@ -147,6 +151,7 @@ class CachedModel < ActiveRecord::Base
     # Try to find the record in memcache and add it to the local cache
     if CachedModel.use_memcache? then
       record = Cache.get "active_record:#{cache_key_local}"
+logger.debug "CachedModel.find_by_sql #{record ? 'HIT' : 'MISS'} #{cache_key_local}!"
       unless record.nil? then
         if CachedModel.use_local_cache? then
           CachedModel.cache_local[cache_key_local] = record
@@ -157,6 +162,7 @@ class CachedModel < ActiveRecord::Base
 
     # Fetch the record from the DB
     records = super
+logger.debug "CachedModel.find_by_sql STORE #{cache_key_local}" unless records.empty?
     records.first.cache_store unless records.empty? # only one
     return records
   end
@@ -172,7 +178,7 @@ class CachedModel < ActiveRecord::Base
 
     waiting = CachedModel.cache_delay_commit.delete level
     waiting.each do |obj| obj.cache_store end
-    
+
     return value
   ensure
     CachedModel.cache_transaction_level -= 1
