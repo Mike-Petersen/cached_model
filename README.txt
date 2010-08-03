@@ -47,9 +47,9 @@ memcache to be readonly for the test environment.
 
 Then make Rails load the gem:
 
-  $ tail -n 4 config/environment.rb 
+  $ tail -n 4 config/environment.rb
   # Include your application configuration below
-  
+
   require 'cached_model'
 
 Then edit your ActiveRecord model to inherit from CachedModel instead of
@@ -58,9 +58,9 @@ ActiveRecord::Base:
   $ head -n 8 app/models/photo.rb
   ##
   # A Photo from Flickr.
-  
+
   class Photo < CachedModel
-  
+
     belongs_to :point
     belongs_to :route
 
@@ -77,9 +77,9 @@ environment.rb:
 And add a after_filter that flushes the local cache:
 
   class ApplicationController < ActionController::Base
-  
+
     after_filter { CachedModel.cache_reset }
-  
+
   end
 
 IF YOU DO NOT ADD THE AFTER FILTER YOU WILL EXPERIENCE EXTREME PROCESS GROWTH.
@@ -93,4 +93,8 @@ changed:
   CachedModel.ttl = 86400
 
 The default TTL for memcache objects is 900 seconds.
+
+=== CHANGES
+2010 Umur Ozkul umur.ozkul@gmail.comp
+"acts_as_cached_model" added instead of inheriting from CachedModel. Thus, HOBO compatible
 
