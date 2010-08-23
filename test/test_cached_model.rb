@@ -1,6 +1,6 @@
 require 'rubygems'
 require 'test/unit'
-require 'test/zentest_assertions'
+# require 'test/zentest_assertions'
 
 $TESTING = true
 $TESTING_CM = true
@@ -9,9 +9,9 @@ RAILS_ENV = 'production'
 
 module Rails; end
 module Rails::VERSION
-  MAJOR = 1
-  MINOR = 1
-  TINY = 2
+  MAJOR = 2
+  MINOR = 3
+  TINY = 8
 end
 
 module ActiveRecord; end
@@ -217,7 +217,7 @@ class TestCachedModel < Test::Unit::TestCase
     util_set
 
     CachedModel.cache_reset
-    
+
     assert_empty CachedModel.cache_local
     deny_empty Cache.cache
   end
@@ -228,7 +228,7 @@ class TestCachedModel < Test::Unit::TestCase
     util_set
 
     CachedModel.cache_reset
-    
+
     deny_empty CachedModel.cache_local
     deny_empty Cache.cache
   end
@@ -239,7 +239,7 @@ class TestCachedModel < Test::Unit::TestCase
     util_set
 
     CachedModel.cache_reset
-    
+
     assert_empty CachedModel.cache_local
     deny_empty Cache.cache
   end
