@@ -1,7 +1,7 @@
 $TESTING_CM = defined? $TESTING_CM
 
 require 'timeout'
-require 'memcache_util' unless $TESTING_CM
+#require 'memcache_util' unless $TESTING_CM
 require 'active_record' unless $TESTING_CM
 
 ##
@@ -56,7 +56,7 @@ module ModelCacher
 
   def cache_delete
     cache_local.delete cache_key_local if CachedModel.use_local_cache?
-    Cache.delete cache_key_memcache if CachedModel.use_memcache?
+    Rails.cache.delete cache_key_memcache if CachedModel.use_memcache?
   end
 
   ##
@@ -93,7 +93,7 @@ module ModelCacher
         cache_local[cache_key_local] = obj
       end
       if CachedModel.use_memcache? then
-        Cache.put cache_key_memcache, obj, CachedModel.ttl
+        Rails.cache.write cache_key_memcache, obj, :expires_in => CachedModel.ttl
       end
     else
       CachedModel.cache_delay_commit[transaction_level] << obj
@@ -119,7 +119,7 @@ module ModelCacher
   def cache_delete(klass, id)
     key = "#{klass}:#{id}"
     CachedModel.cache_local.delete key if CachedModel.use_local_cache?
-    Cache.delete "active_record:#{key}" if CachedModel.use_memcache?
+    Rails.cache.delete "active_record:#{key}" if CachedModel.use_memcache?
   end
 
   ##
@@ -180,7 +180,7 @@ logger.debug "CachedModel.find_by_sql #{args.join(',')}"
 
     # Try to find the record in memcache and add it to the local cache
     if CachedModel.use_memcache? then
-      record = Cache.get "active_record:#{cache_key_local}"
+      record = Rails.cache.read "active_record:#{cache_key_local}"
 logger.debug "CachedModel.find_by_sql #{record ? 'HIT' : 'MISS'} #{cache_key_local}!"
       unless record.nil? then
         if CachedModel.use_local_cache? then
@@ -200,14 +200,16 @@ logger.debug "CachedModel.find_by_sql STORE #{cache_key_local}" unless records.e
   ##
   # Delay updating the cache while in a transaction.
 
-  def transaction_with_model_cacher(*args)
+  def transaction_with_model_cacher(options={}, &block)
     level = CachedModel.cache_transaction_level += 1
     CachedModel.cache_delay_commit[level] = []
 
-    value = transaction_without_model_cacher(*args)
-
+    value = transaction_without_model_cacher(options, &block)
+puts "transaction #{value}"
     waiting = CachedModel.cache_delay_commit.delete level
-    waiting.each do |obj| obj.cache_store end
+    waiting.each do |obj|
+      obj.cache_store
+    end
 
     return value
   ensure

@@ -1,6 +1,6 @@
 require 'rubygems'
 require 'test/unit'
-# require 'test/zentest_assertions'
+#require 'test/zentest_assertions'
 
 $TESTING = true
 $TESTING_CM = true
