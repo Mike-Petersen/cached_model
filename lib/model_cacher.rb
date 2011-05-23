@@ -149,7 +149,7 @@ logger.debug "CachedModel.find #{args.to_json}"
       records = find_without_model_cacher(*args)
       # Then, if it was a :all, just return
       return records if args.first == :all
-      return records if RAILS_ENV == 'test'
+      return records if Rails.env == 'test'
       case records
       when Array then
 logger.debug "CachedModel.find STORE"
